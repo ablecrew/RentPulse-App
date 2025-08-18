@@ -1,0 +1,42 @@
+/*plugin.sbt*/
+
+addSbtPlugin("org.playframework" % "sbt-play-ebean" % "8.2.0")
+
+/*build.sbt*/
+
+name := """RentPulse"""
+organization := "com.rentpulse"
+
+version := "1.0-SNAPSHOT"
+
+lazy val root = (project in file(".")).enablePlugins(PlayJava, PlayEbean)
+
+Compile / playEbeanModels := Seq("models.*")
+
+playEbeanVersion := "8.2.0"
+
+scalaVersion := "2.13.16"
+
+libraryDependencies += guice
+
+libraryDependencies ++= Seq(
+    jdbc,
+    javaWs,
+    javaJdbc,
+    "com.mysql" % "mysql-connector-j" % "8.3.0"
+)
+
+/*application.config*/
+
+db.default.driver=com.mysql.cj.jdbc.Driver
+db.default.url="jdbc:mysql://localhost:3306/rentpulse_db"
+db.default.username=root
+db.default.password="b99marasighan/X"
+
+ebean.default = ["models.*"]
+
+play.ebean.defaultDataSource = "default"
+
+play.forms.binding.directFieldAccess = true
+
+play.evolutions.enabled = false
