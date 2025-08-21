@@ -3,7 +3,7 @@
 addSbtPlugin("org.playframework" % "sbt-play-ebean" % "8.2.0")
 
 /*build.sbt*/
-
+//CONNECTED
 name := """RentPulse"""
 organization := "com.rentpulse"
 
@@ -25,6 +25,18 @@ libraryDependencies ++= Seq(
     javaJdbc,
     "com.mysql" % "mysql-connector-j" % "8.3.0"
 )
+
+//NOT CONNECTED
+name := """RentPulse"""
+organization := "com.rentpulse"
+
+version := "1.0-SNAPSHOT"
+
+lazy val root = (project in file(".")).enablePlugins(PlayJava)
+
+scalaVersion := "2.13.16"
+
+libraryDependencies += guice
 
 /*application.config*/
 
