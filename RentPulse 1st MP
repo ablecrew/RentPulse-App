@@ -779,3 +779,18 @@ th {
 .status.green { background: #c8f7c5; color: #2e7d32; }
 .status.yellow { background: #fff9c4; color: #f9a825; }
 .status.red { background: #ffcccb; color: #d32f2f; }
+
+
+/*routes*/
+
+GET     /                           controllers.HomeController.index()
+GET     /tenants                           controllers.HomeController.tenants()
+GET     /landlords                           controllers.HomeController.landlords()
+GET     /properties                           controllers.HomeController.properties()
+GET     /payments                           controllers.HomeController.payments()
+GET     /analytics                           controllers.HomeController.analytics()
+GET     /usermanagement                           controllers.HomeController.usermanagement()
+GET     /communications                           controllers.HomeController.communications()
+GET     /settings                           controllers.HomeController.settings()
+GET     /support                           controllers.HomeController.support()
+GET     /extras                           controllers.HomeController.extras()
