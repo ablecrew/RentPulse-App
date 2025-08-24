@@ -1,0 +1,654 @@
+/*main.scala.*/
+
+ <div class="sidebar">
+        <div class="logo">
+            <img src="@routes.Assets.versioned("images/icon_1.png")" alt="RentPulse Logo">
+        </div>
+    <div class="toggle" onclick="toggleSidebar()">☰</div>
+    <ul>
+        <li onclick="setActive(this); window.location.href='@routes.HomeController.index()'">📊 Dashboard</li>
+        <li onclick="setActive(this); window.location.href='@routes.HomeController.tenants()'">👥 Tenants</li>
+        <li onclick="setActive(this); window.location.href='@routes.HomeController.landlords()'">🏠 Landlords</li>
+        <li onclick="setActive(this); window.location.href='@routes.HomeController.properties()'">📌 Properties</li>
+        <li onclick="setActive(this); window.location.href='@routes.HomeController.payments()'">💰 Payments</li>
+        <li onclick="setActive(this); window.location.href='@routes.HomeController.analytics()'">📈 Analytics</li>
+        <li onclick="setActive(this); window.location.href='@routes.HomeController.usermanagement()'">🛂 User Management</li>
+        <li onclick="setActive(this); window.location.href='@routes.HomeController.communications()'">📨 Communication Logs</li>
+        <li onclick="setActive(this); window.location.href='@routes.HomeController.settings()'">⚙️ Settings</li>
+        <li onclick="setActive(this); window.location.href='@routes.HomeController.support()'">🧰 Support & Logs</li>
+        <li onclick="setActive(this); window.location.href='@routes.HomeController.extras()'">✨ Extras</li>
+    </ul>
+    </div>
+
+/*index.scala.*/
+
+<div class="main">
+  <div class="card">
+    <h2>📊 Dashboard Overview</h2>
+    <p>Total Landlords: 14</p>
+    <p>Total Tenants: 98</p>
+    <p>Total Properties: 25</p>
+    <p>Pending Payments: 11</p>
+    <p>Total Collected This Month: KES 234,000</p>
+  </div>
+
+  <div class="card">
+    <h2>📅 Recent Activity</h2>
+    <ul>
+      <li>Faith Otieno paid rent for Sunrise Flats - Aug 1</li>
+      <li>Mary A. added new property - Jul 31</li>
+      <li>Ali Kamau sent a support message - Jul 30</li>
+    </ul>
+  </div>
+</div>
+
+/*support.scala*/
+
+<div class="main">
+    <div class="card">
+        <h2>🧾 Audit Trail</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Details</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>2025-07-30</td>
+                <td>Admin Mike</td>
+                <td>Updated</td>
+                <td>Changed rent due date for House 6B</td>
+            </tr>
+            <tr>
+                <td>2025-07-28</td>
+                <td>System</td>
+                <td>Login</td>
+                <td>2FA success for developer account</td>
+            </tr>
+            <tr>
+                <td>2025-07-26</td>
+                <td>Admin Grace</td>
+                <td>Deleted</td>
+                <td>Removed old payment record #7889</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>🧩 Error & System Logs</h2>
+        <ul>
+            <li>✔️ 2025-07-30: All systems operational</li>
+            <li>⚠️ 2025-07-29: M-Pesa gateway delay detected</li>
+            <li>❌ 2025-07-27: Failed backup sync (Properties)</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>🎫 Support Tickets</h2>
+        <ul>
+            <li><strong>#1002:</strong> Tenant unable to see payment status <em>(Pending)</em></li>
+            <li><strong>#0999:</strong> Bug in reminder scheduling <em>(Resolved)</em></li>
+            <li><strong>#0988:</strong> Admin login 2FA loop error <em>(Closed)</em></li>
+        </ul>
+    </div>
+</div>
+
+/*properties.scala*/
+
+@main("Properties Info") {
+
+
+
+<div class="main">
+    <div class="card">
+        <h2>📌 Properties List</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Location</th>
+                <th>Landlord</th>
+                <th>Units</th>
+                <th>Occupied</th>
+                <th>Vacant</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Blue Valley Apartments</td>
+                <td>Karen, Nairobi</td>
+                <td>Peter Kamau</td>
+                <td>20</td>
+                <td>18</td>
+                <td>2</td>
+            </tr>
+            <tr>
+                <td>Green Estate</td>
+                <td>Thika Road</td>
+                <td>Mary Atieno</td>
+                <td>15</td>
+                <td>13</td>
+                <td>2</td>
+            </tr>
+            <tr>
+                <td>Sunrise Flats</td>
+                <td>Rongai</td>
+                <td>Daniel Kipkoech</td>
+                <td>10</td>
+                <td>8</td>
+                <td>2</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>🗺️ Property Map View</h2>
+        <div style="height: 300px; background: #e3f0ff; display: flex; align-items: center; justify-content: center; border-radius: 1rem; color: #4060ff;">
+            <p>Map View Placeholder – Integrate with Google Maps API here</p>
+        </div>
+    </div>
+</div>
+
+}
+
+/*tenants.scala*/
+
+<div class="main">
+    <div class="card">
+        <h2>👥 All Tenants</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Property</th>
+                <th>House No.</th>
+                <th>Landlord</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Jane Mwangi</td>
+                <td>0712345678</td>
+                <td>Blue Valley Apartments</td>
+                <td>A1</td>
+                <td>Peter K.</td>
+                <td><span class="status green">Paid</span></td>
+            </tr>
+            <tr>
+                <td>Ali Kamau</td>
+                <td>0700112233</td>
+                <td>Green Estate</td>
+                <td>B3</td>
+                <td>Mary A.</td>
+                <td><span class="status yellow">Partial</span></td>
+            </tr>
+            <tr>
+                <td>Faith Otieno</td>
+                <td>0722334455</td>
+                <td>Sunrise Flats</td>
+                <td>C5</td>
+                <td>Peter K.</td>
+                <td><span class="status red">Unpaid</span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>🔍 Filter & Tools (Future)</h2>
+        <p>Coming soon: search bar, filters (by landlord/property/status), export to CSV, and bulk messaging.</p>
+    </div>
+</div>
+
+/*landlords.scala*/
+
+
+<div class="main">
+    <div class="card">
+        <h2>🏠 All Landlords</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Properties</th>
+                <th>Tenants</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Peter Kamau</td>
+                <td>peterkexample.com</td>
+                <td>0711000000</td>
+                <td>3</td>
+                <td>24</td>
+                <td><span class="status green">Active</span></td>
+            </tr>
+            <tr>
+                <td>Mary Atieno</td>
+                <td>maryaexample.com</td>
+                <td>0700111222</td>
+                <td>2</td>
+                <td>16</td>
+                <td><span class="status green">Active</span></td>
+            </tr>
+            <tr>
+                <td>Daniel Kipkoech</td>
+                <td>kipkoechdexample.com</td>
+                <td>0722999888</td>
+                <td>1</td>
+                <td>8</td>
+                <td><span class="status yellow">Pending Review</span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>🧰 Tools & Admin Actions (Coming Soon)</h2>
+        <ul>
+            <li>🔍 View full landlord profile & KYC</li>
+            <li>🛑 Suspend or restrict account</li>
+            <li>📥 Download landlord's data & reports</li>
+            <li>✉️ Send direct message or notice</li>
+        </ul>
+    </div>
+</div>
+
+
+
+/*payments.scala*/
+
+@main("Payments Info") {
+
+
+<div class="main">
+    <div class="card">
+        <h2>💳 Payment Records</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Tenant</th>
+                <th>House No</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>2025-07-30</td>
+                <td>John Mwangi</td>
+                <td>A12</td>
+                <td>Rent</td>
+                <td>KES 15,000</td>
+                <td>M-Pesa</td>
+                <td><span class="status green">Success</span></td>
+            </tr>
+            <tr>
+                <td>2025-07-29</td>
+                <td>Jane Wairimu</td>
+                <td>B03</td>
+                <td>Electricity</td>
+                <td>KES 2,300</td>
+                <td>Bank</td>
+                <td><span class="status yellow">Pending</span></td>
+            </tr>
+            <tr>
+                <td>2025-07-28</td>
+                <td>Kevin Otieno</td>
+                <td>C08</td>
+                <td>Water</td>
+                <td>KES 1,200</td>
+                <td>Card</td>
+                <td><span class="status red">Failed</span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>📂 Filters (Coming Soon)</h2>
+        <ul>
+            <li>✅ Filter by date, amount, tenant, type</li>
+            <li>📊 Export to PDF/CSV</li>
+            <li>🔍 View full payment history per tenant</li>
+        </ul>
+    </div>
+</div>
+
+}
+
+/*settings.scala*/
+
+<div class="main">
+    <div class="card">
+        <h2>⚙️ System Preferences</h2>
+        <form class="settings-form">
+            <label>
+                Platform Name:
+                <input type="text" value="RentPulse" />
+            </label>
+            <label>
+                Enable Payment Reminders:
+                <input type="checkbox" checked />
+            </label>
+            <label>
+                Enable Tenant Screening Module:
+                <input type="checkbox" disabled />
+                <small>(Coming Soon)</small>
+            </label>
+            <label>
+                Enable 2FA for Admins:
+                <input type="checkbox" checked />
+            </label>
+            <label>
+                Default Currency:
+                <select>
+                    <option>KES (Kenyan Shilling)</option>
+                    <option>USD</option>
+                    <option>EUR</option>
+                </select>
+            </label>
+            <button class="btn">Save Settings</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>🔄 Sync Settings</h2>
+        <p>Choose which modules sync with cloud backups or API endpoints.</p>
+        <ul>
+            <li><input type="checkbox" checked /> Properties Data</li>
+            <li><input type="checkbox" checked /> Payment Records</li>
+            <li><input type="checkbox" /> Internal Logs</li>
+        </ul>
+        <button class="btn">Update Sync Settings</button>
+    </div>
+</div>
+
+/*usermanagement.scala*/
+
+<div class="main">
+    <div class="card">
+        <h2>🛂 Manage Users</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Emily Njeri</td>
+                <td>Tenant</td>
+                <td>emily.njeriemail.com</td>
+                <td>+254712345678</td>
+                <td><span class="status green">Active</span></td>
+                <td>
+                    <button class="btn small">Edit</button>
+                    <button class="btn red small">Suspend</button>
+                </td>
+            </tr>
+            <tr>
+                <td>David Kamau</td>
+                <td>Landlord</td>
+                <td>d.kamauemail.com</td>
+                <td>+254700234567</td>
+                <td><span class="status green">Active</span></td>
+                <td>
+                    <button class="btn small">Edit</button>
+                    <button class="btn red small">Suspend</button>
+                </td>
+            </tr>
+            <tr>
+                <td>Admin Mike</td>
+                <td>Developer/Admin</td>
+                <td>mikerentpulse.com</td>
+                <td>+254701112233</td>
+                <td><span class="status yellow">Restricted</span></td>
+                <td>
+                    <button class="btn small">Reset PW</button>
+                    <button class="btn red small">Reactivate</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>🛡 User Access Controls (Future)</h2>
+        <ul>
+            <li>🔑 Role-based access settings</li>
+            <li>🧩 Permission toggles (read/write/delete)</li>
+            <li>📲 Two-factor auth enforcement</li>
+        </ul>
+    </div>
+</div>
+
+/*extras.scala*/
+
+<div class="main">
+    <div class="card">
+        <h2>🗺️ Map View (Property Locations)</h2>
+        <!-- Google Maps container -->
+        <div id="map" style="height: 300px; width: 100%;"></div>
+    </div>
+
+    <div class="card">
+        <h2>📢 Bulk Messaging</h2>
+        <form>
+            <label>Send To:
+                <select>
+                    <option value="tenants">All Tenants</option>
+                    <option value="landlords">All Landlords</option>
+                </select>
+            </label>
+            <label>Message:
+                <textarea rows="4" placeholder="Type your message here..."></textarea>
+            </label>
+            <button class="btn" type="button">Send Message</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>✅ 2FA Authentication</h2>
+        <p>Two-factor authentication is currently <strong>enabled</strong> for admin and developer accounts.</p>
+        <button class="btn">Manage 2FA Settings</button>
+    </div>
+
+    <div class="card">
+        <h2>🔎 Tenant Screening (Coming Soon)</h2>
+        <p>This module will help landlords and admins assess tenant reliability based on payment history, previous evictions, and references.</p>
+        <button class="btn" disabled>Launch Screening Tool</button>
+    </div>
+</div>
+
+<!-- Google Maps Script -->
+<script>
+    function initMap() {
+        // Default center location
+        var centerLocation = { lat: -1.286389, lng: 36.817223 };
+
+        // Create a map
+        var map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 12,
+            center: centerLocation
+        });
+
+        // Fetch property data from API
+        fetch('/api/properties')
+            .then(response => response.json())
+            .then(properties => {
+                properties.forEach(property => {
+                    let position = { lat: parseFloat(property.latitude), lng: parseFloat(property.longitude) };
+
+                    let marker = new google.maps.Marker({
+                        position: position,
+                        map: map,
+                        title: property.name
+                    });
+
+                    // Optional info window
+                    let infoWindow = new google.maps.InfoWindow({
+                        content: `<strong>${property.name}</strong><br>${property.address}`
+                    });
+
+                    marker.addListener('click', () => {
+                        infoWindow.open(map, marker);
+                    });
+                });
+            })
+            .catch(error => console.error('Error loading properties:', error));
+    }
+</script>
+
+<!-- Google Maps API -->
+<script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap">
+</script>
+
+/*communications.scala*/
+
+<div class="main">
+    <div class="card">
+        <h2>📨 Message Logs</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Sender</th>
+                <th>Recipient</th>
+                <th>Type</th>
+                <th>Message</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>2025-07-29</td>
+                <td>System</td>
+                <td>All Tenants</td>
+                <td>Reminder</td>
+                <td>Upcoming rent deadline is 31st July. Please pay on time.</td>
+            </tr>
+            <tr>
+                <td>2025-07-25</td>
+                <td>Admin Mike</td>
+                <td>David Kamau</td>
+                <td>Notice</td>
+                <td>Updated your landlord profile with new M-Pesa details.</td>
+            </tr>
+            <tr>
+                <td>2025-07-20</td>
+                <td>System</td>
+                <td>Emily Njeri</td>
+                <td>Alert</td>
+                <td>Your water bill is overdue. Please clear it ASAP.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>🧠 Communication Features (Future)</h2>
+        <ul>
+            <li>📤 Bulk email/SMS sending</li>
+            <li>📱 In-app broadcast announcements</li>
+            <li>📈 Communication analytics: Open/read rates</li>
+            <li>🤖 Auto-reminders for unpaid balances</li>
+        </ul>
+    </div>
+</div>
+
+/*analytics.scala*/
+
+<div class="main">
+    <div class="card">
+        <h2>📉 Rent Collection Trend</h2>
+        <div style="height: 250px; background: #eef5ff; border-radius: 1rem; display: flex; align-items: center; justify-content: center;">
+            <p>[📊 Chart Placeholder – Rent collection line chart]</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🏠 Occupancy Rate</h2>
+        <div style="height: 200px; background: #eef5ff; border-radius: 1rem; display: flex; align-items: center; justify-content: center;">
+            <p>[📈 Chart Placeholder – Bar or Pie chart of occupied vs vacant]</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>💵 Income Distribution</h2>
+        <div style="height: 200px; background: #eef5ff; border-radius: 1rem; display: flex; align-items: center; justify-content: center;">
+            <p>[🧮 Chart Placeholder – Source breakdown: Rent, Water, Electricity]</p>
+        </div>
+    </div>
+</div>
+
+/*HomeController.java*/
+
+public Result index() {
+
+        return ok(views.html.index.render());
+    }
+
+    public Result tenants() {
+
+        return ok(views.html.tenants.render());
+    }
+
+    public Result landlords() {
+
+        return ok(views.html.landlords.render());
+    }
+
+    public Result properties() {
+        return ok(views.html.properties.render());
+    }
+
+    public Result payments() {
+
+        return ok(views.html.payments.render());
+    }
+
+
+    public Result analytics() {
+        return ok(views.html.analytics.render());
+    }
+
+    public Result usermanagement() {
+        return ok(views.html.usermanagement.render());
+    }
+
+    public Result communications() {
+        return ok(views.html.communications.render());
+    }
+
+    public Result settings() {
+        return ok(views.html.settings.render());
+    }
+
+
+    public Result support() {
+        return ok(views.html.support.render());
+    }
+
+    public Result extras() {
+        return ok(views.html.extras.render());
+    }
