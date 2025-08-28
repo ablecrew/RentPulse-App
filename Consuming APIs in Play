@@ -1,0 +1,63 @@
+Rendering raw JSON
+
+/* build.sbt */
+
+libraryDependencies ++= Seq(
+  guice,
+  "com.typesafe.play" %% "play-ws" % "2.9.0"
+)
+
+
+
+/* HomeController.java */
+
+package controllers;
+
+import play.libs.ws.*;
+import play.mvc.*;
+import javax.inject.Inject;
+import java.util.concurrent.CompletionStage;
+
+public class HomeController extends Controller {
+
+    private final WSClient ws;
+
+    @Inject
+    public HomeController(WSClient ws) {
+        this.ws = ws;
+    }
+
+    // Example: Fetch tenants list from PHP API
+    public CompletionStage<Result> tenants() {
+        String apiUrl = "http://localhost/rentpulse-api/tenants/list_tenants.php";
+
+        return ws.url(apiUrl)
+                 .addHeader("X-App-Username", "rentpulse_app_8f7c2a")
+                 .addHeader("X-App-Password", "G7m!v9qLx2A$pT8bY3fR0s")
+                 .get()
+                 .thenApply(response -> {
+                     // return the raw JSON from PHP API
+                     return ok(response.getBody()).as("application/json");
+                 });
+    }
+
+    // Example: Fetch properties list
+    public CompletionStage<Result> properties() {
+        String apiUrl = "http://localhost/rentpulse-api/properties/get_property.php?id=1";
+
+        return ws.url(apiUrl)
+                 .addHeader("X-App-Username", "rentpulse_app_8f7c2a")
+                 .addHeader("X-App-Password", "G7m!v9qLx2A$pT8bY3fR0s")
+                 .get()
+                 .thenApply(response -> ok(response.getBody()).as("application/json"));
+    }
+}
+
+
+/*conf/routes */
+
+GET     /tenants           controllers.HomeController.tenants
+GET     /properties        controllers.HomeController.properties
+
+// calls the php API and shows the JSON
+
