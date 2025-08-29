@@ -1,0 +1,319 @@
+/* Signin Screen */
+
+// With Parse JSON, role direction;
+
+package com.rentpulse.ui.screens
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.rentpulse.R
+import com.rentpulse.navigation.Screens
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import okhttp3.*
+import org.json.JSONObject
+import java.io.IOException
+
+@Composable
+fun SignInScreen(
+    navController: NavController? = null,
+    onForgotPasswordClick: () -> Unit = {},
+    onGoogleClick: () -> Unit = {},
+    onAppleClick: () -> Unit = {},
+    onMicrosoftClick: () -> Unit = {},
+    onSignUpClick: () -> Unit = {}
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val montserrat = FontFamily(Font(R.font.montserrat_regular))
+
+    fun performLogin() {
+        if (email.isBlank() || password.isBlank()) {
+            errorMessage = "Email and Password required"
+            return
+        }
+
+        loading = true
+        errorMessage = null
+
+        val client = OkHttpClient()
+        val body = FormBody.Builder()
+            .add("email", email)
+            .add("password", password)
+            .build()
+
+        val request = Request.Builder()
+            .url("http://10.0.2.2/rentpulse/api/login.php") // update with your login endpoint
+            .post(body)
+            .build()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    loading = false
+                    errorMessage = "Network error: ${e.message}"
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    loading = false
+                    response.body?.string()?.let { responseBody ->
+                        val json = JSONObject(responseBody)
+                        if (json.getString("status") == "success") {
+                            val userObj = json.getJSONObject("user")
+                            val role = userObj.getString("role")
+
+                            // Navigate based on role
+                            if (role == "landlord") {
+                                navController?.navigate(Screens.LandlordDashboard.route) {
+                                    popUpTo(Screens.SignInScreen.route) { inclusive = true }
+                                }
+                            } else if (role == "tenant") {
+                                navController?.navigate(Screens.TenantDashboard.route) {
+                                    popUpTo(Screens.SignInScreen.route) { inclusive = true }
+                                }
+                            }
+                        } else {
+                            errorMessage = json.optString("message", "Login failed")
+                        }
+                    }
+                }
+            })
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colorStops = arrayOf(
+                        0.0f to Color(0xFF007BFF),
+                        0.5f to Color(0xFF007BFF),
+                        0.55f to Color(0xFFBFDFFF),
+                        1.0f to Color(0xFFF5F5F5)
+                    )
+                )
+            )
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(top = 40.dp)
+                .fillMaxWidth()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.icon_1),
+                contentDescription = "Logo",
+                modifier = Modifier.height(160.dp)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Welcome Back!",
+                fontFamily = montserrat,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .background(Color.White, shape = RoundedCornerShape(20.dp))
+                    .padding(20.dp)
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email address", fontFamily = montserrat, color = Color.Black) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        textStyle = TextStyle(
+                            fontFamily = montserrat,
+                            color = Color.Black),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Gray,
+                            unfocusedBorderColor = Color.LightGray
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password", fontFamily = montserrat, color = Color.Black) },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            val icon = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(icon, contentDescription = null)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        textStyle = TextStyle(
+                            fontFamily = montserrat,
+                            color = Color.Black),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Gray,
+                            unfocusedBorderColor = Color.LightGray
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = { performLogin() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = if (loading) "Logging in..." else "Log In",
+                            fontFamily = montserrat,
+                            color = Color.White
+                        )
+                    }
+
+                    if (errorMessage != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = errorMessage ?: "",
+                            color = Color.Red,
+                            fontSize = 14.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Forgot Password?",
+                        color = Color(0xFF007BFF),
+                        fontFamily = montserrat,
+                        modifier = Modifier.clickable {
+                            navController?.navigate(Screens.PasswordResetScreen.route)
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Divider(modifier = Modifier.weight(1f), color = Color.LightGray)
+                        Text(
+                            text = "  OR Sign In with  ",
+                            fontFamily = montserrat,
+                            fontSize = 12.sp
+                        )
+                        Divider(modifier = Modifier.weight(1f), color = Color.LightGray)
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Image(
+                            painter = painterResource(id = R.drawable.google_logo),
+                            contentDescription = "Google",
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable { onGoogleClick() }
+                        )
+                        Image(
+                            painter = painterResource(id = R.drawable.apple_logo),
+                            contentDescription = "Apple",
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable { onAppleClick() }
+                        )
+                        Image(
+                            painter = painterResource(id = R.drawable.microsoft_logo),
+                            contentDescription = "Microsoft",
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable { onMicrosoftClick() }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row {
+                        Text(
+                            text = "Didn’t have an Account?",
+                            fontFamily = montserrat,
+                            fontSize = 12.sp
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Sign Up",
+                            fontFamily = montserrat,
+                            color = Color(0xFF007BFF),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.clickable {
+                                navController?.navigate(Screens.CreateAccountScreen.route)
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "By signing in, you agree to the terms of Services \n and privacy policy",
+                fontSize = 15.sp,
+                color = Color.Black,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                fontFamily = montserrat,
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SignInScreenPreview() {
+    val navController = rememberNavController()
+    SignInScreen(navController = navController)
+}
