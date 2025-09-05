@@ -4,6 +4,8 @@
 
 package com.rentpulse.ui.screens
 
+import retrofit2.Call
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -32,84 +35,29 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.rentpulse.R
+import com.rentpulse.data.models.LoginRequest
+import com.rentpulse.data.models.LoginResponse
 import com.rentpulse.navigation.Screens
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import okhttp3.*
-import org.json.JSONObject
-import java.io.IOException
+import retrofit2.Callback
+import retrofit2.Response
+
 
 @Composable
 fun SignInScreen(
     navController: NavController? = null,
+    onLoginClick: () -> Unit = {},
     onForgotPasswordClick: () -> Unit = {},
     onGoogleClick: () -> Unit = {},
     onAppleClick: () -> Unit = {},
     onMicrosoftClick: () -> Unit = {},
-    onSignUpClick: () -> Unit = {}
+    onSignUpClick: () -> Unit = {},
+    onLoginSuccess: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var loading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val montserrat = FontFamily(Font(R.font.montserrat_regular))
-
-    fun performLogin() {
-        if (email.isBlank() || password.isBlank()) {
-            errorMessage = "Email and Password required"
-            return
-        }
-
-        loading = true
-        errorMessage = null
-
-        val client = OkHttpClient()
-        val body = FormBody.Builder()
-            .add("email", email)
-            .add("password", password)
-            .build()
-
-        val request = Request.Builder()
-            .url("http://10.0.2.2/rentpulse/api/login.php") // update with your login endpoint
-            .post(body)
-            .build()
-
-        CoroutineScope(Dispatchers.IO).launch {
-            client.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    loading = false
-                    errorMessage = "Network error: ${e.message}"
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    loading = false
-                    response.body?.string()?.let { responseBody ->
-                        val json = JSONObject(responseBody)
-                        if (json.getString("status") == "success") {
-                            val userObj = json.getJSONObject("user")
-                            val role = userObj.getString("role")
-
-                            // Navigate based on role
-                            if (role == "landlord") {
-                                navController?.navigate(Screens.LandlordDashboard.route) {
-                                    popUpTo(Screens.SignInScreen.route) { inclusive = true }
-                                }
-                            } else if (role == "tenant") {
-                                navController?.navigate(Screens.TenantDashboard.route) {
-                                    popUpTo(Screens.SignInScreen.route) { inclusive = true }
-                                }
-                            }
-                        } else {
-                            errorMessage = json.optString("message", "Login failed")
-                        }
-                    }
-                }
-            })
-        }
-    }
 
     Box(
         modifier = Modifier
@@ -165,7 +113,7 @@ fun SignInScreen(
                             .padding(vertical = 8.dp),
                         shape = RoundedCornerShape(12.dp),
                         textStyle = TextStyle(
-                            fontFamily = montserrat,
+                            fontFamily = com.rentpulse.ui.theme.Montserrat,
                             color = Color.Black),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color.Gray,
@@ -189,7 +137,7 @@ fun SignInScreen(
                             .padding(vertical = 8.dp),
                         shape = RoundedCornerShape(12.dp),
                         textStyle = TextStyle(
-                            fontFamily = montserrat,
+                            fontFamily = com.rentpulse.ui.theme.Montserrat,
                             color = Color.Black),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color.Gray,
@@ -199,8 +147,33 @@ fun SignInScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    val context = LocalContext.current
+
+
                     Button(
-                        onClick = { performLogin() },
+                        onClick = {
+                            val request = LoginRequest(email = email, password = password)
+
+                            RetrofitClient.api.loginUser(request).enqueue(object :
+                                Callback<LoginResponse> {
+                                override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+                                    if (response.isSuccessful) {
+                                        val body = response.body()
+                                        if (body?.status == "success") {
+                                            Toast.makeText(context, "Login Success", Toast.LENGTH_SHORT).show()
+                                            onLoginSuccess()
+                                            navController?.navigate(Screens.TenantDashboardScreen.route) // or landlord dashboard
+                                        } else {
+                                            Toast.makeText(context, body?.message ?: "Login failed", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+
+                                override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                                    Toast.makeText(context, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            })
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
@@ -208,20 +181,12 @@ fun SignInScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = if (loading) "Logging in..." else "Log In",
+                            text = "Log In",
                             fontFamily = montserrat,
                             color = Color.White
                         )
                     }
 
-                    if (errorMessage != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = errorMessage ?: "",
-                            color = Color.Red,
-                            fontSize = 14.sp
-                        )
-                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -315,6 +280,7 @@ fun SignInScreen(
 @Composable
 fun SignInScreenPreview() {
     val navController = rememberNavController()
-    SignInScreen(navController = navController)
+    SignInScreen(navController = navController, onLoginSuccess = {})
 }
+
 
