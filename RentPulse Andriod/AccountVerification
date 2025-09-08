@@ -1,0 +1,291 @@
+package com.rentpulse
+
+import androidx.biometric.BiometricPrompt
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.rentpulse.navigation.Screens
+import kotlinx.coroutines.delay
+import java.util.concurrent.Executor
+
+val MontserratFont = FontFamily(Font(R.font.montserrat_regular))
+
+/** Non-composable utility: no Compose calls inside */
+private fun showBiometricPrompt(
+    activity: FragmentActivity,
+    executor: Executor,
+    onSuccess: () -> Unit
+) {
+    val biometricPrompt = BiometricPrompt(
+        activity,
+        executor,
+        object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(
+                result: BiometricPrompt.AuthenticationResult
+            ) {
+                super.onAuthenticationSucceeded(result)
+                onSuccess()
+            }
+        }
+    )
+
+    val promptInfo = BiometricPrompt.PromptInfo.Builder()
+        .setTitle("Biometric Authentication")
+        .setSubtitle("Use your fingerprint to continue")
+        .setNegativeButtonText("Cancel")
+        .build()
+
+    biometricPrompt.authenticate(promptInfo)
+}
+
+@Composable
+fun AccountVerificationScreen(navController: NavController) {
+    val context = LocalContext.current
+    val executor: Executor = ContextCompat.getMainExecutor(context)
+
+    var otpValues by remember { mutableStateOf(List(6) { "" }) }
+    var timeLeft by remember { mutableStateOf(420) }
+
+    // For auto focus
+    val focusRequesters = remember { List(6) { FocusRequester() } }
+
+    // Timer countdown
+    LaunchedEffect(timeLeft) {
+        if (timeLeft > 0) {
+            delay(1000L)
+            timeLeft--
+        }
+    }
+
+    val minutes = timeLeft / 60
+    val seconds = timeLeft % 60
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colorStops = arrayOf(
+                        0.0f to Color(0xFF007BFF),
+                        0.5f to Color(0xFF007BFF),
+                        0.55f to Color(0xFFBFDFFF),
+                        1.0f to Color(0xFFF5F5F5)
+                    )
+                )
+            )
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 10.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.icon_1),
+                contentDescription = "RentPulse Logo",
+                modifier = Modifier.size(130.dp)
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "Verify Your Account",
+                fontFamily = montserratFont,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Check your email for a verification code\nChoose a method below.",
+                fontFamily = montserratFont,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .background(Color.White, shape = RoundedCornerShape(16.dp))
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Enter a 6 digit code",
+                        fontFamily = montserratFont,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // OTP input with auto-advance and vertically centered digits
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        otpValues.forEachIndexed { index, value ->
+                            BasicTextField(
+                                value = value,
+                                onValueChange = { newValue ->
+                                    if (newValue.length <= 1 && newValue.all { it.isDigit() }) {
+                                        val newOtp = otpValues.toMutableList()
+                                        newOtp[index] = newValue
+                                        otpValues = newOtp
+
+                                        if (newValue.isNotEmpty() && index < 5) {
+                                            focusRequesters[index + 1].requestFocus()
+                                        }
+                                        if (newValue.isEmpty() && index > 0) {
+                                            focusRequesters[index - 1].requestFocus()
+                                        }
+                                    }
+                                },
+                                textStyle = TextStyle(
+                                    fontFamily = montserratFont,
+                                    fontSize = 18.sp,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
+                                ),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier
+                                    .focusRequester(focusRequesters[index]),
+                                decorationBox = { innerTextField ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(42.dp)
+                                            .background(
+                                                Color(0xFFEFEFEF),
+                                                shape = RoundedCornerShape(8.dp)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        innerTextField()
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Code expires in ${minutes}:${seconds.toString().padStart(2, '0')}",
+                        fontFamily = montserratFont,
+                        color = Color.Red,
+                        fontSize = 12.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Use Biometrics",
+                        fontFamily = montserratFont,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Image(
+                        painter = painterResource(id = R.drawable.fingerprint_icon),
+                        contentDescription = "Fingerprint",
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clickable {
+                                (context as? FragmentActivity)?.let { activity ->
+                                    showBiometricPrompt(
+                                        activity = activity,
+                                        executor = executor
+                                    ) {
+                                        navController.navigate(Screens.RolesScreen.route)
+                                    }
+                                }
+                            }
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            val otpCode = otpValues.joinToString("")
+                            if (otpCode.length == 6) {
+                                navController.navigate(Screens.RolesScreen.route)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF))
+                    ) {
+                        Text(
+                            text = "Confirm & Continue",
+                            fontFamily = montserratFont,
+                            color = Color.White
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Choose Another Method",
+                        fontFamily = montserratFont,
+                        color = Color(0xFF007BFF),
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Your Biometric data is never stored-\nverification runs locally on your phone",
+                fontFamily = montserratFont,
+                color = Color.Black,
+                fontSize = 15.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AccountVerificationScreenPreview() {
+    val navController = rememberNavController()
+    AccountVerificationScreen(navController)
+}
