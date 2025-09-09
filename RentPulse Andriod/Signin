@@ -1,10 +1,8 @@
-/* SigninScreen */
 
 //With the Parse response JSON
 
 package com.rentpulse.ui.screens
 
-import retrofit2.Call
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,16 +33,14 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.rentpulse.R
-import com.rentpulse.data.models.LoginRequest
-import com.rentpulse.data.models.LoginResponse
+import com.rentpulse.data.models.ApiResponse
 import com.rentpulse.navigation.Screens
-import retrofit2.Callback
-import retrofit2.Response
-
+import com.rentpulse.util.RSAEncryptionHelper
+import kotlinx.coroutines.launch
 
 @Composable
 fun SignInScreen(
-    navController: NavController? = null,
+    navController: NavController,
     onLoginClick: () -> Unit = {},
     onForgotPasswordClick: () -> Unit = {},
     onGoogleClick: () -> Unit = {},
@@ -56,8 +52,11 @@ fun SignInScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
     val montserrat = FontFamily(Font(R.font.montserrat_regular))
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
@@ -147,32 +146,44 @@ fun SignInScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    val context = LocalContext.current
-
-
                     Button(
                         onClick = {
-                            val request = LoginRequest(email = email, password = password)
+                            RSAEncryptionHelper.fetchPublicKey { publicKey ->
+                                if (publicKey != null) {
+                                    val encryptedPassword = RSAEncryptionHelper.encryptWithPublicKey(password, publicKey)
 
-                            RetrofitClient.api.loginUser(request).enqueue(object :
-                                Callback<LoginResponse> {
-                                override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                                    if (response.isSuccessful) {
-                                        val body = response.body()
-                                        if (body?.status == "success") {
-                                            Toast.makeText(context, "Login Success", Toast.LENGTH_SHORT).show()
-                                            onLoginSuccess()
-                                            navController?.navigate(Screens.TenantDashboardScreen.route) // or landlord dashboard
-                                        } else {
-                                            Toast.makeText(context, body?.message ?: "Login failed", Toast.LENGTH_SHORT).show()
+                                    if (encryptedPassword == null) {
+                                        Toast.makeText(context, "Encryption failed", Toast.LENGTH_SHORT).show()
+                                        return@fetchPublicKey
+                                    }
+
+                                    scope.launch {
+                                        isLoading = true
+                                        try {
+                                            val response: ApiResponse = RetrofitClient.api.login(
+                                                mapOf(
+                                                    "email" to email,
+                                                    "password" to encryptedPassword
+                                                )
+                                            )
+
+                                            if (response.success) {
+                                                Toast.makeText(context, "Login Success", Toast.LENGTH_SHORT).show()
+                                                onLoginSuccess()
+                                                navController.navigate(Screens.TenantDashboardScreen.route)
+                                            } else {
+                                                Toast.makeText(context, response.message ?: "Login failed", Toast.LENGTH_SHORT).show()
+                                            }
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        } finally {
+                                            isLoading = false
                                         }
                                     }
+                                } else {
+                                    Toast.makeText(context, "Could not fetch public key", Toast.LENGTH_SHORT).show()
                                 }
-
-                                override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
-                                    Toast.makeText(context, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
-                                }
-                            })
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -180,13 +191,20 @@ fun SignInScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(
-                            text = "Log In",
-                            fontFamily = montserrat,
-                            color = Color.White
-                        )
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        } else {
+                            Text(
+                                text = "Log In",
+                                fontFamily = montserrat,
+                                color = Color.White
+                            )
+                        }
                     }
-
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -195,7 +213,7 @@ fun SignInScreen(
                         color = Color(0xFF007BFF),
                         fontFamily = montserrat,
                         modifier = Modifier.clickable {
-                            navController?.navigate(Screens.PasswordResetScreen.route)
+                            navController.navigate(Screens.PasswordResetScreen.route)
                         }
                     )
 
@@ -253,7 +271,7 @@ fun SignInScreen(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clickable {
-                                navController?.navigate(Screens.CreateAccountScreen.route)
+                                navController.navigate(Screens.CreateAccountScreen.route)
                             }
                         )
                     }
@@ -282,5 +300,6 @@ fun SignInScreenPreview() {
     val navController = rememberNavController()
     SignInScreen(navController = navController, onLoginSuccess = {})
 }
+
 
 
