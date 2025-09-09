@@ -1,7 +1,5 @@
 package com.rentpulse
 
-import android.content.ContentValues.TAG
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -31,16 +29,15 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.rentpulse.ui.theme.Montserrat
 import com.rentpulse.navigation.Screens
+import com.rentpulse.data.models.ApiResponse
 import com.rentpulse.data.models.RegisterRequest
-import com.rentpulse.data.models.RegisterResponse
 import com.rentpulse.util.RSAEncryptionHelper
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.launch
 
 @Composable
 fun CreateAccountScreen(navController: NavController) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -48,6 +45,7 @@ fun CreateAccountScreen(navController: NavController) {
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -70,7 +68,6 @@ fun CreateAccountScreen(navController: NavController) {
                 .padding(top = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             Image(
                 painter = painterResource(id = R.drawable.icon_1),
                 contentDescription = "App Logo",
@@ -119,15 +116,12 @@ fun CreateAccountScreen(navController: NavController) {
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
                 OutlinedTextField(
                     value = fullName,
                     onValueChange = { fullName = it },
                     label = { Text("Full Name", fontFamily = Montserrat, color = Color.Black) },
                     modifier = Modifier.fillMaxWidth(),
-                    textStyle = TextStyle(
-                        fontFamily = Montserrat,
-                        color = Color.Black),
+                    textStyle = TextStyle(fontFamily = Montserrat, color = Color.Black),
                     shape = RoundedCornerShape(12.dp)
                 )
 
@@ -136,11 +130,9 @@ fun CreateAccountScreen(navController: NavController) {
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text("Email address", fontFamily = Montserrat, color =Color.Black) },
+                    label = { Text("Email address", fontFamily = Montserrat, color = Color.Black) },
                     modifier = Modifier.fillMaxWidth(),
-                    textStyle = TextStyle(
-                        fontFamily = Montserrat,
-                        color = Color.Black),
+                    textStyle = TextStyle(fontFamily = Montserrat, color = Color.Black),
                     shape = RoundedCornerShape(12.dp)
                 )
 
@@ -160,9 +152,7 @@ fun CreateAccountScreen(navController: NavController) {
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    textStyle = TextStyle(
-                        fontFamily = Montserrat,
-                        color = Color.Black),
+                    textStyle = TextStyle(fontFamily = Montserrat, color = Color.Black),
                     shape = RoundedCornerShape(12.dp)
                 )
 
@@ -182,9 +172,7 @@ fun CreateAccountScreen(navController: NavController) {
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    textStyle = TextStyle(
-                        fontFamily = Montserrat,
-                        color = Color.Black),
+                    textStyle = TextStyle(fontFamily = Montserrat, color = Color.Black),
                     shape = RoundedCornerShape(12.dp)
                 )
 
@@ -205,35 +193,42 @@ fun CreateAccountScreen(navController: NavController) {
                                         return@fetchPublicKey
                                     }
 
-                                    val request = RegisterRequest(
-                                        username = fullName,
-                                        email = email,
-                                        password = encryptedPassword, // ✅ encrypted
-                                        role = "tenant"
-                                    )
+                                    scope.launch {
+                                        isLoading = true
+                                        try {
+                                            val request = RegisterRequest(
+                                                username = fullName,
+                                                email = email,
+                                                password = encryptedPassword,
+                                                role = "tenant"
+                                            )
 
-                                    RetrofitClient.api.registerUser(request)
-                                        .enqueue(object : Callback<RegisterResponse> {
-                                            override fun onResponse(
-                                                call: Call<RegisterResponse>,
-                                                response: Response<RegisterResponse>
-                                            ) {
-                                                if (response.isSuccessful) {
-                                                    val body = response.body()
-                                                    if (body?.status == "success") {
-                                                        Toast.makeText(context, "Registered Successfully", Toast.LENGTH_SHORT).show()
-                                                        navController.navigate(Screens.AccountVerificationScreen.route)
-                                                    } else {
-                                                        Toast.makeText(context, body?.message ?: "Error", Toast.LENGTH_SHORT).show()
-                                                    }
+                                            // ✅ Updated: call register (not registerUser)
+                                            val registerResponse =
+                                                RetrofitClient.api.register(request)
+
+                                            if (registerResponse.status == "success") {
+                                                Toast.makeText(context, "Registered Successfully", Toast.LENGTH_SHORT).show()
+
+                                                // 🔹 Send OTP
+                                                val otpResponse: ApiResponse =
+                                                    RetrofitClient.api.sendOtp(mapOf("email" to email))
+
+                                                if (otpResponse.success) {
+                                                    Toast.makeText(context, "OTP sent to your email", Toast.LENGTH_SHORT).show()
+                                                    navController.navigate(Screens.AccountVerificationScreen.createRoute(email))
+                                                } else {
+                                                    Toast.makeText(context, otpResponse.message ?: "Failed to send OTP", Toast.LENGTH_SHORT).show()
                                                 }
+                                            } else {
+                                                Toast.makeText(context, registerResponse.message ?: "Registration failed", Toast.LENGTH_SHORT).show()
                                             }
-
-                                            override fun onFailure(call: Call<RegisterResponse>, t: Throwable) {
-                                                Log.i(TAG,"Network Error: ${t.message}")
-                                                Toast.makeText(context, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
-                                            }
-                                        })
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        } finally {
+                                            isLoading = false
+                                        }
+                                    }
                                 } else {
                                     Toast.makeText(context, "Could not fetch public key", Toast.LENGTH_SHORT).show()
                                 }
@@ -244,12 +239,20 @@ fun CreateAccountScreen(navController: NavController) {
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF)),
                     shape = RoundedCornerShape(50.dp)
                 ) {
-                    Text("Create Account", fontFamily = Montserrat, color = Color.White)
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        Text("Create Account", fontFamily = Montserrat, color = Color.White)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("OR Sign Up with", fontFamily = Montserrat, fontSize = 14.sp, color =Color.Black)
+                Text("OR Sign Up with", fontFamily = Montserrat, fontSize = 14.sp, color = Color.Black)
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -286,7 +289,7 @@ fun CreateAccountScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row {
-                    Text("Already have an Account? ", fontFamily = Montserrat, color =Color.Black)
+                    Text("Already have an Account? ", fontFamily = Montserrat, color = Color.Black)
                     Text(
                         text = "Sign In",
                         color = Color(0xFF007BFF),
@@ -299,7 +302,7 @@ fun CreateAccountScreen(navController: NavController) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Text(
                 text = "By signing up, you agree to the Terms of Services and Privacy Policy",
