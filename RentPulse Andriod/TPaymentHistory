@@ -1,0 +1,195 @@
+package com.rentpulse.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.rentpulse.MontserratFont
+import com.rentpulse.R
+import com.rentpulse.navigation.Screens
+
+
+@Composable
+fun TenantPaymentHistoryScreen(navController: NavController) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colorStops = arrayOf(
+                        0.0f to Color(0xFF007BFF),
+                        0.5f to Color(0xFF007BFF),
+                        0.55f to Color(0xFFBFDFFF),
+                        1.0f to Color(0xFFF5F5F5)
+                    )
+                )
+            )
+    ) {
+        Spacer(modifier = Modifier.height(32.dp)) // push everything down a bit
+
+        // Top bar with back arrow and title
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Back",
+                tint = Color.White,
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable { navController.popBackStack() }
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = "Payment History",
+                fontFamily = MontserratFont,
+                color = Color.White,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Start
+            )
+        }
+
+        Spacer(modifier = Modifier.height(28.dp)) // move card down a bit more
+
+        // Card-like container for payment history
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(Color.White)
+                .padding(12.dp)
+        ) {
+            PaymentItem("Payment Received", "Rent", "Ksh.129,000")
+            PaymentItem("Payment Received", "Rent", "Ksh.129,000")
+            PaymentItem("Payment Received", "Electricity", "Ksh.38,000")
+            PaymentItem("Payment Received", "Rent", "Ksh.129,000")
+            PaymentItem("Payment Received", "Water", "Ksh.51,000")
+            PaymentItem("Payment Received", "Rent", "Ksh.193,500")
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Bottom navigation
+        TDBottomNavigationBar(
+            navController = navController,
+            currentScreen = Screens.TenantPaymentDashboardScreen.route
+        )
+    }
+}
+
+@Composable
+fun PaymentItem(title: String, subtitle: String, amount: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color.LightGray.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.blue_tick),
+                    contentDescription = "Checked",
+                    tint = Color.Black,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(title, fontFamily = MontserratFont, fontSize = 16.sp, color = Color.Black)
+                Text(subtitle, fontFamily = MontserratFont, fontSize = 14.sp, color = Color.Gray)
+            }
+        }
+        Text(amount, fontFamily = MontserratFont, fontSize = 16.sp, color = Color.Black)
+    }
+}
+
+@Composable
+fun BottomNavigationBar(navController: NavController, selectedTab: String) {
+    NavigationBar(
+        containerColor = Color.White,
+        tonalElevation = 8.dp
+    ) {
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+            selected = selectedTab == "home",
+            onClick = { navController.navigate("home") },
+            label = { Text("Home", fontFamily = MontserratFont) }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+            selected = selectedTab == "settings",
+            onClick = { navController.navigate("settings") },
+            label = { Text("Settings", fontFamily = MontserratFont) }
+        )
+        NavigationBarItem(
+            selected = selectedTab == "lease",
+            onClick = {
+                navController.navigate(Screens.TenantLeaseDetailsScreen.route) {
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.lease_ic),
+                    contentDescription = "Lease",
+                    modifier = Modifier.size(28.dp),
+                    tint = if (selectedTab == "lease") Color(0xFF007BFF) else Color.Black
+                )
+            },
+            label = {
+                Text(
+                    text = "Lease",
+                    fontFamily = MontserratFont,
+                    color = if (selectedTab == "lease") Color(0xFF007BFF) else Color.Black
+                )
+            }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Payment, contentDescription = "Payments") },
+            selected = selectedTab == "payments",
+            onClick = { navController.navigate("payments") },
+            label = { Text("Payments", fontFamily = MontserratFont) }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PaymentHistoryPreview() {
+    val navController = rememberNavController()
+    TenantPaymentHistoryScreen(navController)
+}
