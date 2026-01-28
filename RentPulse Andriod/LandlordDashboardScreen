@@ -1,0 +1,834 @@
+package com.rentpulse
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Devices
+
+
+@Composable
+fun LandlordDashboardScreen() {
+    val scrollState = rememberScrollState()
+    var selectedTab by remember { mutableStateOf("This Month") }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF007BFF).copy(alpha = 0.20f),
+                        Color(0xFF007BFF).copy(alpha = 0.05f)
+                    ),
+                    startY = 0f,
+                    endY = 800f
+                )
+            )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
+            // Top Bar with notification, welcome text and menu
+            TopBarSection()
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Stats Row - Tenants and Properties
+            StatsRow()
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Payments Overview Card
+            PaymentsOverviewCard(
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Tenant Directory
+            TenantDirectoryCard()
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // M-Pesa Reconciliation
+            MPesaReconciliationCard()
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Payment Predictor (AI)
+            PaymentPredictorCard()
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Recent Payments
+            RecentPaymentsCard()
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // RentPulse Ad Image
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFF1a1a2e))
+            ) {
+                // Placeholder for ad image
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.Bottom
+                ) {
+                    Text(
+                        text = "RentPulse",
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Smarter Property Management.",
+                        fontSize = 16.sp,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(100.dp))
+        }
+
+        // Bottom Navigation
+        BottomNavigationBar(
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+}
+
+@Composable
+fun TopBarSection() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box {
+            Icon(
+                imageVector = Icons.Default.Notifications,
+                contentDescription = "Notifications",
+                modifier = Modifier.size(24.dp),
+                tint = Color(0xFF007BFF)
+            )
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .offset(x = 14.dp, y = (-2).dp)
+                    .background(Color.Red, CircleShape)
+            )
+        }
+
+        Text(
+            text = "Welcome Landlord Name!",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.Black
+        )
+
+        Icon(
+            imageVector = Icons.Default.MoreVert,
+            contentDescription = "Menu",
+            modifier = Modifier.size(24.dp),
+            tint = Color.Black
+        )
+    }
+}
+
+@Composable
+fun StatsRow() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        StatCard(
+            icon = Icons.Default.Person,
+            label = "Tenants",
+            value = "32",
+            modifier = Modifier.weight(1f)
+        )
+
+        StatCard(
+            icon = Icons.Default.Home,
+            label = "Properties",
+            value = "10",
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun StatCard(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF007BFF))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+            Column {
+                Text(
+                    text = label,
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+                Text(
+                    text = value,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PaymentsOverviewCard(
+    selectedTab: String,
+    onTabSelected: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.cash),
+                    contentDescription = "Payments",
+                    modifier = Modifier.size(30.dp)
+                )
+                Text(
+                    text = "Payments Overview",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF007BFF)
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "This Month",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Tabs
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("Today", "This Week", "This Month").forEach { tab ->
+                    PaymentTab(
+                        text = tab,
+                        isSelected = selectedTab == tab,
+                        onClick = { onTabSelected(tab) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Payment Details
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "Ksh. 2,389,788",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "Total Collected",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = " of Ksh. 3,289,878",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(Color.Red, CircleShape)
+                        )
+                        Text(
+                            text = "2 overdue",
+                            fontSize = 12.sp,
+                            color = Color.Red
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Progress Indicator
+            LinearProgressIndicator(
+                progress = 0.75f,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = Color(0xFF007BFF),
+                trackColor = Color(0xFFF4F4F4)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Tap to view detailed payments",
+                fontSize = 12.sp,
+                color = Color(0xFF007BFF),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+fun PaymentTab(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(36.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) Color(0xFF007BFF) else Color(0xFFE3F2FD)
+        ),
+        shape = RoundedCornerShape(8.dp),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            color = if (isSelected) Color.White else Color.Black,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+        )
+    }
+}
+
+@Composable
+fun TenantDirectoryCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Tenant Directory",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF007BFF)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                DirectoryItem(
+                    icon = Icons.Default.Build,
+                    label = "Maintenance"
+                )
+                DirectoryItem(
+                    icon = Icons.Default.Email,
+                    label = "Messages"
+                )
+                DirectoryItem(
+                    icon = Icons.Default.CheckCircle,
+                    label = "Verification"
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFE3F2FD), RoundedCornerShape(8.dp))
+                    .padding(12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Improve Operational Efficiency by 25%",
+                    fontSize = 12.sp,
+                    color = Color(0xFF007BFF),
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DirectoryItem(icon: ImageVector, label: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(Color(0xFFE3F2FD), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = Color(0xFF007BFF),
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = Color.Gray
+        )
+    }
+}
+
+@Composable
+fun MPesaReconciliationCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "M-Pesa Reconciliation",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF007BFF)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Today's Income",
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+            Text(
+                text = "Ksh. 23, 000",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Reconciliation Stats
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                ReconciliationStat("Matched", "12", Color(0xFF4CAF50))
+                ReconciliationStat("Unmatched", "5", Color(0xFFFFC107))
+                ReconciliationStat("Flagged", "2", Color(0xFFF44336))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF007BFF)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "Tap to Reconcile",
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ReconciliationStat(label: String, value: String, color: Color) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = Color.Gray
+        )
+        Text(
+            text = value,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+    }
+}
+
+@Composable
+fun PaymentPredictorCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Payment Predictor (AI)",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF007BFF)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Risk Level Badge
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(Color(0xFF4CAF50), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "LOW",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+
+                // Risk Details
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Risk Forecast",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+                    RiskItem("Low Risk: 75%", Color(0xFF4CAF50))
+                    RiskItem("Medium Risk: 19%", Color(0xFFFFC107))
+                    RiskItem("High Risk: 10%", Color(0xFFF44336))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Stars,
+                    contentDescription = "AI",
+                    tint = Color(0xFF007BFF),
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Powered by AI Predictor",
+                    fontSize = 12.sp,
+                    color = Color(0xFF007BFF)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RiskItem(text: String, color: Color) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(color, CircleShape)
+        )
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            color = Color.Gray
+        )
+    }
+}
+
+@Composable
+fun RecentPaymentsCard() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Recent Payments",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF007BFF)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            PaymentItem("AS", "Alex Smith", "Ksh. 92, 000", "Paid", Color(0xFFE91E63))
+            PaymentItem("DB", "David Brian", "Ksh. 24, 000", "Overdue", Color(0xFF2196F3))
+            PaymentItem("CM", "Carlos Miller", "Ksh. 26, 000", "Overdue", Color(0xFFFFC107))
+            PaymentItem("KK", "Kevin Kangethe", "Ksh. 31, 000", "Paid", Color(0xFF9C27B0))
+            PaymentItem("KO", "Kevin Odhiambo", "Ksh. 31, 000", "Pending", Color(0xFF4CAF50))
+        }
+    }
+}
+
+@Composable
+fun PaymentItem(
+    initials: String,
+    name: String,
+    amount: String,
+    status: String,
+    backgroundColor: Color
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(backgroundColor, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = initials,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+
+            Column {
+                Text(
+                    text = name,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
+                )
+                Text(
+                    text = "8th View Apt. Unit 6",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
+        }
+
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = amount,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Black
+            )
+            Text(
+                text = status,
+                fontSize = 12.sp,
+                color = when (status) {
+                    "Paid" -> Color(0xFF4CAF50)
+                    "Overdue" -> Color(0xFFF44336)
+                    else -> Color(0xFFFFC107)
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun BottomNavigationBar(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 32.dp, vertical = 16.dp)
+    ) {
+        Card(
+            modifier = Modifier
+                .wrapContentWidth()
+                .align(Alignment.Center),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp)
+            ) {
+                BottomNavItem(Icons.Default.Home, "Home", true)
+                BottomNavItem(Icons.Default.Business, "Properties", false)
+                BottomNavItem(Icons.Default.Payment, "Payments", false)
+                BottomNavItem(Icons.Default.Person, "Me", false)
+            }
+        }
+    }
+}
+
+@Composable
+fun BottomNavItem(icon: ImageVector, label: String, isSelected: Boolean) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = if (isSelected) Color(0xFF007BFF) else Color.Gray,
+            modifier = Modifier.size(24.dp)
+        )
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = if (isSelected) Color(0xFF007BFF) else Color.Gray,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+        )
+    }
+}
+
+@Preview(
+    name = "Pixel 7",
+    device = Devices.PIXEL_7,
+    showSystemUi = true,
+    showBackground = true
+)
+@Composable
+fun LandlordDashboardPixel7Preview() {
+    MaterialTheme {
+        LandlordDashboardScreen()
+    }
+}
