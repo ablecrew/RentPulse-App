@@ -1,0 +1,334 @@
+package com.rentpulse
+
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.rentpulse.data.models.ApiResponse
+import com.rentpulse.navigation.Screens
+import com.rentpulse.util.RSAEncryptionHelper
+import kotlinx.coroutines.launch
+
+@Composable
+fun SignInScreen(
+    navController: NavController,
+    onLoginClick: () -> Unit = {},
+    onForgotPasswordClick: () -> Unit = {},
+    onGoogleClick: () -> Unit = {},
+    onAppleClick: () -> Unit = {},
+    onMicrosoftClick: () -> Unit = {},
+    onSignUpClick: () -> Unit = {},
+    onLoginSuccess: () -> Unit
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    val montserrat = FontFamily(Font(R.font.montserrat_regular))
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colorStops = arrayOf(
+                        0.0f to Color(0xFF007BFF),
+                        0.5f to Color(0xFF007BFF),
+                        0.55f to Color(0xFFBFDFFF),
+                        1.0f to Color(0xFFF5F5F5)
+                    )
+                )
+            )
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(top = 40.dp)
+                .fillMaxWidth()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.icon_1),
+                contentDescription = "Logo",
+                modifier = Modifier.height(160.dp)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Welcome Back!",
+                fontFamily = montserrat,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .background(Color.White, shape = RoundedCornerShape(20.dp))
+                    .padding(20.dp)
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email address", fontFamily = montserrat, color = Color.Black) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        textStyle = TextStyle(
+                            fontFamily = com.rentpulse.ui.theme.Montserrat,
+                            color = Color.Black
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Gray,
+                            unfocusedBorderColor = Color.LightGray
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password", fontFamily = montserrat, color = Color.Black) },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            val icon = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(icon, contentDescription = null)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        textStyle = TextStyle(
+                            fontFamily = com.rentpulse.ui.theme.Montserrat,
+                            color = Color.Black
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Gray,
+                            unfocusedBorderColor = Color.LightGray
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            RSAEncryptionHelper.fetchPublicKey { publicKey ->
+                                if (publicKey != null) {
+                                    val encryptedPassword =
+                                        RSAEncryptionHelper.encryptWithPublicKey(password, publicKey)
+
+                                    if (encryptedPassword == null) {
+                                        Toast.makeText(context, "Encryption failed", Toast.LENGTH_SHORT).show()
+                                        return@fetchPublicKey
+                                    }
+
+                                    scope.launch {
+                                        isLoading = true
+                                        try {
+                                            val response: ApiResponse = RetrofitClient.api.login(
+                                                mapOf(
+                                                    "email" to email,
+                                                    "password" to encryptedPassword
+                                                )
+                                            )
+
+                                            if (response.success) {
+                                                // ✅ Save session
+                                                saveUserSession(context, response.userId, response.role)
+
+                                                // ✅ Save token for API calls
+                                                saveAuthToken(context, response.token)
+
+                                                Toast.makeText(context, "Login Success", Toast.LENGTH_SHORT).show()
+                                                onLoginSuccess()
+
+                                                // ✅ Redirect based on role
+                                                when (response.role?.lowercase()) {
+                                                    "tenant" -> navController.navigate(Screens.TenantDashboardScreen.route)
+                                                    "landlord" -> navController.navigate(Screens.LandlordDashboardd.route)
+                                                    null, "", "null" -> navController.navigate(Screens.RolesScreen.route)
+                                                    else -> navController.navigate(Screens.RolesScreen.route)
+                                                }
+                                            } else {
+                                                Toast.makeText(context, response.message ?: "Login failed", Toast.LENGTH_SHORT).show()
+                                            }
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        } finally {
+                                            isLoading = false
+                                        }
+                                    }
+                                } else {
+                                    Toast.makeText(context, "Could not fetch public key", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        } else {
+                            Text(
+                                text = "Log In",
+                                fontFamily = montserrat,
+                                color = Color.White
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Forgot Password?",
+                        color = Color(0xFF007BFF),
+                        fontFamily = montserrat,
+                        modifier = Modifier.clickable {
+                            navController.navigate(Screens.PasswordResetScreen.route)
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Divider(modifier = Modifier.weight(1f), color = Color.LightGray)
+                        Text(
+                            text = "  OR Sign In with  ",
+                            fontFamily = montserrat,
+                            fontSize = 12.sp
+                        )
+                        Divider(modifier = Modifier.weight(1f), color = Color.LightGray)
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Image(
+                            painter = painterResource(id = R.drawable.google_logo),
+                            contentDescription = "Google",
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable { onGoogleClick() }
+                        )
+                        Image(
+                            painter = painterResource(id = R.drawable.apple_logo),
+                            contentDescription = "Apple",
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable { onAppleClick() }
+                        )
+                        Image(
+                            painter = painterResource(id = R.drawable.microsoft_logo),
+                            contentDescription = "Microsoft",
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable { onMicrosoftClick() }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row {
+                        Text(
+                            text = "Didn’t have an Account?",
+                            fontFamily = montserrat,
+                            fontSize = 12.sp
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Sign Up",
+                            fontFamily = montserrat,
+                            color = Color(0xFF007BFF),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.clickable {
+                                navController.navigate(Screens.CreateAccountScreen.route)
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "By signing in, you agree to the terms of Services \n and privacy policy",
+                fontSize = 15.sp,
+                color = Color.Black,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                fontFamily = montserrat,
+            )
+        }
+    }
+}
+
+// ✅ Save session locally
+fun saveUserSession(context: Context, userId: String?, role: String?) {
+    val sharedPref = context.getSharedPreferences("RentPulsePrefs", Context.MODE_PRIVATE)
+    with(sharedPref.edit()) {
+        putString("userId", userId)
+        putString("role", role)
+        apply()
+    }
+}
+
+// ✅ Save token locally
+fun saveAuthToken(context: Context, token: String?) {
+    val sharedPref = context.getSharedPreferences("RentPulsePrefs", Context.MODE_PRIVATE)
+    with(sharedPref.edit()) {
+        putString("auth_token", token)
+        apply()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SignInScreenPreview() {
+    val navController = rememberNavController()
+    SignInScreen(navController = navController, onLoginSuccess = {})
+}

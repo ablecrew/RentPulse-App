@@ -1,0 +1,328 @@
+package com.rentpulse
+
+import android.widget.Toast
+import androidx.biometric.BiometricPrompt
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.rentpulse.data.models.ApiResponse
+import com.rentpulse.navigation.Screens
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.util.concurrent.Executor
+
+val MontserratFont = FontFamily(Font(R.font.montserrat_regular))
+
+private fun showBiometricPrompt(
+    activity: FragmentActivity,
+    executor: Executor,
+    onSuccess: () -> Unit
+) {
+    val biometricPrompt = BiometricPrompt(
+        activity,
+        executor,
+        object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                onSuccess()
+            }
+        }
+    )
+
+    val promptInfo = BiometricPrompt.PromptInfo.Builder()
+        .setTitle("Biometric Authentication")
+        .setSubtitle("Use your fingerprint to continue")
+        .setNegativeButtonText("Cancel")
+        .build()
+
+    biometricPrompt.authenticate(promptInfo)
+}
+
+@Composable
+fun AccountVerificationScreen(
+    navController: NavController,
+    email: String
+) {
+    val context = LocalContext.current
+    val executor: Executor = ContextCompat.getMainExecutor(context)
+    val scope = rememberCoroutineScope()
+
+    var otpValues by remember { mutableStateOf(List(6) { "" }) }
+    var timeLeft by remember { mutableStateOf(240) }
+    var canResend by remember { mutableStateOf(false) }
+    var isVerifying by remember { mutableStateOf(false) }
+    var isResending by remember { mutableStateOf(false) }
+    val focusRequesters = remember { List(6) { FocusRequester() } }
+
+    LaunchedEffect(key1 = timeLeft) {
+        if (timeLeft > 0) {
+            delay(1000L)
+            timeLeft--
+        } else {
+            canResend = true
+        }
+    }
+
+    val minutes = timeLeft / 60
+    val seconds = timeLeft % 60
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colorStops = arrayOf(
+                        0.0f to Color(0xFF007BFF),
+                        0.5f to Color(0xFF007BFF),
+                        0.55f to Color(0xFFBFDFFF),
+                        1.0f to Color(0xFFF5F5F5)
+                    )
+                )
+            )
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 20.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.icon_1),
+                contentDescription = "RentPulse Logo",
+                modifier = Modifier.size(140.dp)
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "Verify Your Account",
+                fontFamily = MontserratFont,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Enter the 6-digit code sent to $email\nor use fingerprint authentication",
+                fontFamily = MontserratFont,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .background(Color.White, shape = RoundedCornerShape(20.dp))
+                    .padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Enter a 6 digit code",
+                        fontFamily = MontserratFont,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        otpValues.forEachIndexed { index, value ->
+                            BasicTextField(
+                                value = value,
+                                onValueChange = { newValue ->
+                                    if (newValue.length <= 1 && (newValue.isEmpty() || newValue.all { it.isDigit() })) {
+                                        val newOtp = otpValues.toMutableList()
+                                        newOtp[index] = newValue
+                                        otpValues = newOtp
+
+                                        if (newValue.isNotEmpty() && index < 5) focusRequesters[index + 1].requestFocus()
+                                        if (newValue.isEmpty() && index > 0) focusRequesters[index - 1].requestFocus()
+                                    }
+                                },
+                                textStyle = TextStyle(
+                                    fontFamily = MontserratFont,
+                                    fontSize = 18.sp,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
+                                ),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .focusRequester(focusRequesters[index]),
+                                decorationBox = { innerTextField ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(35.dp)
+                                            .background(
+                                                Color(0xFFEFEFEF),
+                                                shape = RoundedCornerShape(8.dp)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) { innerTextField() }
+                                }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (!canResend) {
+                        Text(
+                            text = "Code expires in ${minutes}:${seconds.toString().padStart(2, '0')}",
+                            fontFamily = MontserratFont,
+                            color = Color.Red,
+                            fontSize = 12.sp
+                        )
+                    } else {
+                        TextButton(
+                            onClick = {
+                                if (isResending) return@TextButton
+                                isResending = true
+                                scope.launch {
+                                    try {
+                                        val resp: ApiResponse = RetrofitClient.api.sendOtp(
+                                            mapOf("email" to email) // will send JSON body if you updated Retrofit
+                                        )
+                                        if (resp.success) {
+                                            Toast.makeText(context, "OTP resent!", Toast.LENGTH_SHORT).show()
+                                            timeLeft = 240
+                                            canResend = false
+                                        } else {
+                                            Toast.makeText(context, resp.message ?: "Failed to resend OTP", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Network error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    } finally {
+                                        isResending = false
+                                    }
+                                }
+                            },
+                            enabled = !isResending
+                        ) {
+                            Text("Resend OTP", color = Color(0xFF007BFF))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            val otpCode = otpValues.joinToString("")
+                            if (otpCode.length != 6) {
+                                Toast.makeText(context, "Enter a 6-digit code", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+                            if (isVerifying) return@Button
+                            isVerifying = true
+
+                            scope.launch {
+                                try {
+                                    // Updated call to send JSON body
+                                    val resp: ApiResponse = RetrofitClient.api.verifyOtp(
+                                        mapOf("email" to email, "otp" to otpCode)
+                                    )
+                                    if (resp.success) {
+                                        Toast.makeText(context, "Verified", Toast.LENGTH_SHORT).show()
+                                        navController.navigate(Screens.RolesScreen.route)
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            resp.message ?: "Invalid or expired OTP",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Network error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                } finally {
+                                    isVerifying = false
+                                }
+                            }
+                        },
+                        enabled = !isVerifying,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(text = if (isVerifying) "Verifying..." else "Confirm & Continue", color = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = {
+                            val activity = context as? FragmentActivity
+                            if (activity != null) {
+                                showBiometricPrompt(activity, executor) {
+                                    Toast.makeText(context, "Biometric verified!", Toast.LENGTH_SHORT).show()
+                                    navController.navigate(Screens.RolesScreen.route)
+                                }
+                            } else {
+                                Toast.makeText(context, "Biometric not supported", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(text = "Use Fingerprint Instead", color = Color.White)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "By verifying, you agree to the Terms of Service\nand Privacy Policy",
+                fontSize = 13.sp,
+                color = Color.Black,
+                textAlign = TextAlign.Center,
+                fontFamily = MontserratFont,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AccountVerificationScreenPreview() {
+    val navController = rememberNavController()
+    AccountVerificationScreen(navController, email = "test@example.com")
+}
